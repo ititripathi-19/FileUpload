@@ -28,7 +28,7 @@ let storage = multer.diskStorage({
           fileType
         }
         allFilesData.push (newFile)
-      callback(null,fileName,Date.now());
+      callback(null,fileName,Date.now().toString());
     }
 });
 
@@ -50,15 +50,39 @@ app.post('/files/upload', function (req, res) {
 });
 
 app.get('/files/:fileId', (req, res) => {
-  const { fileId } = req.params;
-  const file = allFilesData.find((file) => file.fileId === fileId);
+  const { getfileId } = req.params;
+  console.log('fileId:::::::::', getfileId)
+  const file = allFilesData.find(({fileId}) => fileId === getfileId);
 
   if (!file) {
     return res.status(404).json({ error: 'File not found' });
   }
-
-  const fileData = fs.readFileSync(`uploads/${fileId}`, 'binary');
+  console.log('File::::::::::::', file)
+  // const fileData = fs.readFileSync(`uploads/${file.fileName}`, 'binary');
   res.json({ filData });
+});
+
+
+app.put('/files/:fileId', (req, res) => {
+  const { fileId } = req.params;
+  const { newFileBinaryData, newMetadata } = req.body;
+
+  fs.writeFileSync(`uploads/${fileId}`, newFileBinaryData, 'binary');
+  const fileMetadataIndex = fileMetadata.findIndex((file) => file.fileId === fileId);
+
+  if (fileMetadataIndex !== -1) {
+    fileMetadata[fileMetadataIndex] = {
+      ...fileMetadata[fileMetadataIndex],
+      ...newMetadata,
+    };
+  }
+
+  res.json({ message: 'File updated successfully' });
+});
+
+// 5. List Files API
+app.get('/files', (req, res) => {
+  res.json(allFilesData);
 });
 
 
